@@ -1,0 +1,96 @@
+# ==============================
+# Python / Telegram Bot Project
+# ==============================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.EdyBuddy/
+.EdyBuddy-env/
+*.egg-info/
+
+# macOS junk files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# SQLite / database files
+*.db
+*.sqlite3
+*.sqlite
+
+# Logs and cache
+*.log
+*.bak
+*.tmp
+*.swp
+.cache/
+logs/
+
+# PyCharm / VSCode / IDE settings
+.idea/
+.vscode/
+*.code-workspace
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Python build artifacts
+build/
+dist/
+*.egg
+*.egg-info/
+MANIFEST
+
+# Environment / config files
+.env
+config.json
+config.ini
+settings_local.py
+*.secret
+token.txt
+config.py
+*.pem
+*.key
+
+# Temporary uploads or user files
+uploads/
+temp/
+tmp/
+
+# Telegram bot specific
+session*.txt
+bot_session/
+*.session
+*.session-journal
+
+# Compiled Cython or binary extensions
+*.so
+*.pyd
+
+# Backup or auto-save files
+*~
+*.bak
+*.old
+*.save
+*.orig
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints
+
+# Reports, test outputs
+coverage/
+htmlcov/
+.tox/
+pytest_cache/
+

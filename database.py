@@ -8,112 +8,6 @@ def connect():
     return sqlite3.connect(DB_PATH)
 
 
-# ===== CREATE TABLES =====
-def create_tables():
-    conn = connect()
-    c = conn.cursor()
-
-    # ===== USERS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        telegram_id INTEGER UNIQUE,
-        username TEXT,
-        full_name TEXT,
-        role TEXT CHECK(role IN ('teacher','student','unknown')) DEFAULT 'unknown'
-    )""")
-
-    # ===== GROUPS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS groups (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE
-    )""")
-
-    # ===== SUBJECTS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS subjects (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE
-    )""")
-
-    # ===== TEACHERS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS teachers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        full_name TEXT,
-        subject_id INTEGER,
-        login TEXT UNIQUE,
-        password TEXT,
-        FOREIGN KEY(subject_id) REFERENCES subjects(id)
-    )""")
-
-    # ===== STUDENTS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        full_name TEXT,
-        group_id INTEGER,
-        city TEXT,
-        login TEXT UNIQUE,
-        password TEXT,
-        FOREIGN KEY(group_id) REFERENCES groups(id)
-    )""")
-
-    # ===== MARKS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS marks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER,
-        subject_id INTEGER,
-        teacher_id INTEGER,
-        group_id INTEGER,
-        mark INTEGER,
-        put_date TEXT,
-        FOREIGN KEY(student_id) REFERENCES students(id),
-        FOREIGN KEY(subject_id) REFERENCES subjects(id),
-        FOREIGN KEY(teacher_id) REFERENCES teachers(id),
-        FOREIGN KEY(group_id) REFERENCES groups(id)
-    )""")
-
-    # ===== HOMEWORKS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS homeworks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        subject_id INTEGER,
-        teacher_id INTEGER,
-        group_id INTEGER,
-        task TEXT,
-        deadline TEXT,
-        FOREIGN KEY(subject_id) REFERENCES subjects(id),
-        FOREIGN KEY(teacher_id) REFERENCES teachers(id),
-        FOREIGN KEY(group_id) REFERENCES groups(id)
-    )""")
-
-    # ===== SCHEDULES =====
-    c.execute("""CREATE TABLE IF NOT EXISTS schedules (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        weekday TEXT,
-        time TEXT,
-        subject_id INTEGER,
-        teacher_id INTEGER,
-        group_id INTEGER,
-        FOREIGN KEY(subject_id) REFERENCES subjects(id),
-        FOREIGN KEY(teacher_id) REFERENCES teachers(id),
-        FOREIGN KEY(group_id) REFERENCES groups(id)
-    )""")
-
-    # ===== FAQ =====
-    c.execute("""CREATE TABLE IF NOT EXISTS faq (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        question TEXT UNIQUE,
-        answer TEXT
-    )""")
-
-    # ===== EMOJIS =====
-    c.execute("""CREATE TABLE IF NOT EXISTS emojis (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        symbol TEXT
-    )""")
-
-    conn.commit()
-    conn.close()
-    print("✅ Все таблицы успешно созданы/проверены с поддержкой group_id!")
-
-
 # ===== USERS =====
 def insert_user(telegram_id, username, full_name, role="unknown"):
     conn = connect()
@@ -192,12 +86,21 @@ def get_homeworks_for_student(group_id):
 def get_faq_answer(question_text):
     conn = connect()
     c = conn.cursor()
-    clean_text = question_text.lower().replace('?', '').strip()
-    c.execute("SELECT answer FROM faq WHERE lower(question) LIKE ?", (f"%{clean_text}%",))
-    row = c.fetchone()
-    conn.close()
-    return row[0] if row else "❓ Ответ не найден."
 
+    # Savolni tozalaymiz (past harflar va belgilarni olib tashlaymiz)
+    clean_text = question_text.lower().replace('?', '').replace('!', '').replace('.', '').strip()
+
+    c.execute("SELECT question, answer FROM faq")
+    rows = c.fetchall()
+
+    for q, a in rows:
+        q_clean = q.lower().replace('?', '').replace('!', '').replace('.', '').strip()
+        if q_clean == clean_text:
+            conn.close()
+            return a
+
+    conn.close()
+    return "❓ Ответ не найден."
 
 # ===== EMOJI =====
 def get_random_emoji():
@@ -257,10 +160,3 @@ def get_schedule_for_teacher(teacher_id):
     return rows
 
 
-def setup_all():
-    create_tables()
-    print("✅ Все таблицы проверены или созданы успешно!")
-
-
-if __name__ == "__main__":
-    setup_all()
