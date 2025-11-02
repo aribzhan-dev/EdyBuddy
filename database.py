@@ -66,7 +66,6 @@ def get_student_marks(student_id):
 
 # ===== HOMEWORKS =====
 def get_homeworks_for_student(group_id):
-    """Возвращает домашние задания по group_id"""
     conn = connect()
     c = conn.cursor()
     c.execute("""
@@ -87,7 +86,7 @@ def get_faq_answer(question_text):
     conn = connect()
     c = conn.cursor()
 
-    # Savolni tozalaymiz (past harflar va belgilarni olib tashlaymiz)
+
     clean_text = question_text.lower().replace('?', '').replace('!', '').replace('.', '').strip()
 
     c.execute("SELECT question, answer FROM faq")
@@ -158,5 +157,20 @@ def get_schedule_for_teacher(teacher_id):
     rows = c.fetchall()
     conn.close()
     return rows
+
+
+def insert_feedback(user_id, faq_id, liked):
+    conn = connect()
+    c = conn.cursor()
+    try:
+        c.execute("""
+            INSERT INTO feedback (faq_id, user_id, liked)
+            VALUES (?, ?, ?)
+        """, (faq_id, user_id, liked))
+        conn.commit()
+    except Exception as e:
+        print(f"[DB ERROR] Feedback insert failed: {e}")
+    finally:
+        conn.close()
 
 

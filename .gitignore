@@ -94,3 +94,4 @@ htmlcov/
 .tox/
 pytest_cache/
 
+.idea
