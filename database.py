@@ -40,14 +40,28 @@ def check_login(role, login, password):
 
 
 # ===== MARKS =====
-def insert_mark(student_id, subject_id, teacher_id, group_id, mark):
+def insert_mark(student_id, subject_id, teacher_id, mark):
     conn = connect()
     c = conn.cursor()
-    c.execute("""INSERT INTO marks (student_id, subject_id, teacher_id, group_id, mark, put_date)
-                 VALUES (?, ?, ?, ?, ?, ?)""",
-              (student_id, subject_id, teacher_id, group_id, mark, date.today()))
+
+
+    c.execute("SELECT group_id FROM students WHERE id = ?", (student_id,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return "❌ Студент с таким ID не найден."
+
+    group_id = row[0]
+
+
+    c.execute("""
+        INSERT INTO marks (student_id, subject_id, teacher_id, group_id, mark, put_date)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (student_id, subject_id, teacher_id, group_id, mark, date.today()))
     conn.commit()
     conn.close()
+
+    return "✅ Оценка успешно добавлена!"
 
 
 def get_student_marks(student_id):

@@ -1,11 +1,12 @@
 import requests
 import random
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telegram.ext import ContextTypes
 from datetime import datetime
 from database import *
 from config import DEEPSEEK_URL, AI_MODEL
-
+import re
+import difflib
 
 user_state = {}
 
@@ -35,6 +36,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state[chat_id] = {"role": "teacher", "step": "login"}
         await update.message.reply_text("Введите логин 👤:")
         return
+
     if text == "👩‍🎓 Студент":
         user_state[chat_id] = {"role": "student", "step": "login"}
         await update.message.reply_text("Введите логин 👤:")
@@ -44,18 +46,22 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat_id in user_state:
         state = user_state[chat_id]
         role = state["role"]
+        step = state.get("step")
+
+        print(f"DEBUG → step: {step} | text: {text}")
 
 
-        if state["step"] == "login":
+        if step == "login":
             state["login"] = text
             state["step"] = "password"
             await update.message.reply_text("Введите пароль 🔒:")
             return
 
 
-        elif state["step"] == "password":
+        elif step == "password":
             state["password"] = text
             user = check_login(role, state["login"], state["password"])
+
             if not user:
                 await update.message.reply_text("❌ Неверный логин или пароль.")
                 del user_state[chat_id]
@@ -67,25 +73,25 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 state["id"], state["name"], state["group_id"] = user
                 await show_student_menu(update)
+
             state["step"] = "menu"
             return
 
-        # MENU bosqichi
-        if state["step"] == "menu":
-            if role == "teacher":
-                await teacher_actions(update, context, state)
-            else:
-                await student_actions(update, context, state)
 
-        # FAQ so‘rovi
-        elif state.get("step") == "faq":
+        elif step == "faq":
             await handle_faq(update, context, state)
             return
 
-        # Feedback
-        elif state.get("step") == "faq_feedback":
+
+        elif step == "faq_feedback":
             await handle_faq_feedback(update, context, state)
             return
+
+
+        elif role == "teacher":
+            await teacher_actions(update, context, state)
+        else:
+            await student_actions(update, context, state)
 
 
 # ===== TEACHER MENU =====
@@ -119,6 +125,33 @@ async def teacher_actions(update: Update, context, state):
     text = update.message.text
     teacher_id = state["id"]
 
+    print(f"DEBUG → step: {state.get('step')} | text: {text}")
+
+
+    if state.get("step") == "put_mark":
+        try:
+            print("DEBUG → inside put_mark")
+            sid, mark = map(int, text.split())
+
+            result = insert_mark(sid, 1, teacher_id, mark)
+
+            print(f"DEBUG → insert_mark result: {result}")
+            await update.message.reply_text(result)
+
+            state["step"] = "menu"
+            return
+
+        except ValueError as e:
+            print("DEBUG → ValueError:", e)
+            await update.message.reply_text("⚠️ Формат неверный. Пример: 3 5")
+            return
+
+
+    if state.get("step") == "faq":
+        await handle_faq(update, context, state)
+        return
+
+
     if text == "👨‍🎓 Мои студенты":
         students = get_students_by_teacher(teacher_id)
         if not students:
@@ -132,16 +165,8 @@ async def teacher_actions(update: Update, context, state):
     elif text == "📝 Поставить оценку":
         await update.message.reply_text("Введите ID студента и оценку (например: 3 5)")
         state["step"] = "put_mark"
+        print("DEBUG → step set to put_mark")
         return
-
-    elif state.get("step") == "put_mark":
-        try:
-            sid, mark = map(int, text.split())
-            insert_mark(sid, 1, teacher_id, mark)
-            await update.message.reply_text("✅ Оценка успешно добавлена!")
-            state["step"] = "menu"
-        except:
-            await update.message.reply_text("⚠️ Формат неверный. Пример: 3 5")
 
     elif text == "📅 Мое расписание":
         weekday = datetime.now().strftime("%A")
@@ -216,8 +241,6 @@ async def student_actions(update: Update, context, state):
 
 
 # ======== AI-FAQ HANDLER ========
-import re
-
 async def handle_faq(update: Update, context: ContextTypes.DEFAULT_TYPE, state):
     text = update.message.text.strip()
 
@@ -240,20 +263,20 @@ async def handle_faq(update: Update, context: ContextTypes.DEFAULT_TYPE, state):
     faqs = c.fetchall()
     conn.close()
 
-    found = None
+    best_match = None
+    best_score = 0.0
 
 
     for faq_id, question, answer in faqs:
-
         q_clean = re.sub(r"[^\w\s]", "", question.lower())
+        score = difflib.SequenceMatcher(None, clean_text, q_clean).ratio()
+        if score > best_score:
+            best_score = score
+            best_match = (faq_id, answer)
 
-        if clean_text in q_clean or q_clean in clean_text:
-            found = (faq_id, answer)
-            break
 
-
-    if found:
-        faq_id, db_answer = found
+    if best_score >= 0.7:
+        faq_id, db_answer = best_match
         emoji = get_random_emoji()
         keyboard = [
             [KeyboardButton("✅ Ответ полезный"), KeyboardButton("❌ Ответ не подходит")],
@@ -265,12 +288,17 @@ async def handle_faq(update: Update, context: ContextTypes.DEFAULT_TYPE, state):
         )
         state["step"] = "faq_feedback"
         state["faq_id"] = faq_id
+        print(f"DEBUG → FAQ match {best_score:.2f} with DB question")
         return
 
 
     await update.message.reply_text("🤔 Не найдено в базе, обращаюсь к AI...")
 
-    payload = {"model": AI_MODEL, "prompt": f"Отвечай кратко и дружелюбно: {text}", "stream": False}
+    payload = {
+        "model": AI_MODEL,
+        "prompt": f"Отвечай кратко и дружелюбно: {text}",
+        "stream": False
+    }
     try:
         response = requests.post(DEEPSEEK_URL, json=payload, timeout=60)
         ai_answer = response.json().get("response", "⚠️ Не удалось получить ответ.")
@@ -293,9 +321,31 @@ async def handle_faq(update: Update, context: ContextTypes.DEFAULT_TYPE, state):
 
 # ======== FEEDBACK HANDLER ========
 async def handle_faq_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE, state):
-    text = update.message.text
+    text = update.message.text.strip()
     telegram_id = update.effective_user.id
     faq_id = state.get("faq_id")
+
+    print(f"DEBUG → step: {state.get('step')} | text: {text}")
+
+
+    if text == "🆕 Задать новый вопрос":
+        await update.message.reply_text(
+            "✍️ Напишите свой вопрос:",
+            reply_markup=ReplyKeyboardRemove()
+        )
+
+        state["step"] = "faq"
+        state["faq_id"] = None
+        return
+
+
+    if text == "🏠 Главное меню":
+        state["step"] = "menu"
+        if state["role"] == "teacher":
+            await show_teacher_menu(update)
+        else:
+            await show_student_menu(update)
+        return
 
 
     conn = connect()
@@ -307,29 +357,26 @@ async def handle_faq_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
     if text == "✅ Ответ полезный":
-        await update.message.reply_text("😊 Рад, что помог!")
+        await update.message.reply_text("😊 Рад, что помог!", reply_markup=ReplyKeyboardRemove())
         if user_id:
             insert_feedback(user_id, faq_id, 1)
     elif text == "❌ Ответ не подходит":
-        await update.message.reply_text("😔 Жаль! Попробуйте задать вопрос иначе.")
+        await update.message.reply_text("😔 Жаль! Попробуйте задать вопрос иначе.", reply_markup=ReplyKeyboardRemove())
         if user_id:
             insert_feedback(user_id, faq_id, 0)
-    elif text == "🏠 Главное меню":
-        state["step"] = "menu"
-        if state["role"] == "teacher":
-            await show_teacher_menu(update)
-        else:
-            await show_student_menu(update)
-        return
     else:
         await update.message.reply_text("📩 Напишите новый вопрос или вернитесь в меню.")
+        return
 
 
     keyboard = [
-        [KeyboardButton("🏠 Главное меню")],
+        [KeyboardButton("🆕 Задать новый вопрос")],
+        [KeyboardButton("🏠 Главное меню")]
     ]
     await update.message.reply_text(
-        "📩 Можете задать новый вопрос:",
+        "📨 Что дальше?",
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
-    state["step"] = "faq"
+
+
+    state["step"] = "faq_feedback"
