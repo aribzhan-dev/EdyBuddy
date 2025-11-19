@@ -303,6 +303,13 @@ async def handle_faq(update: Update, context: ContextTypes.DEFAULT_TYPE, state):
     except Exception as e:
         ai_answer = f"⚠️ Ошибка подключения к AI: {e}"
 
+    insert_ai_log(
+        telegram_id=update.effective_user.id,
+        username=update.effective_user.username,
+        request=text,
+        response=ai_answer
+    )
+
     emoji = get_random_emoji()
     keyboard = [
         [KeyboardButton("✅ Ответ полезный"), KeyboardButton("❌ Ответ не подходит")],

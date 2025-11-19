@@ -1,140 +1,156 @@
 import sqlite3
+import os
 from optparse import Values
 
-DB_PATH = "../data/edubuddy.db"
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "edubuddy.db")
+DB_PATH = os.path.abspath(DB_PATH)
 
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
 
 
-
 cur.execute("""
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS ai_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    telegram_id INTEGER UNIQUE,
+    telegram_id INTEGER NOT NULL,
     username TEXT,
-    full_name TEXT,
-    role TEXT CHECK(role IN ('teacher','student','unknown')) DEFAULT 'unknown'
+    user_request TEXT NOT NULL,
+    ai_response TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);"""
 )
-""")
-
-# ===== GROUPS =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS groups (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE
-)
-""")
-
-# ===== SUBJECTS =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS subjects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE
-)
-""")
-
-# ===== TEACHERS =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS teachers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    full_name VARCHAR(155),
-    subject_id INTEGER,
-    login VARCHAR(100) UNIQUE,
-    password VARCHAR(100),
-    FOREIGN KEY(subject_id) REFERENCES subjects(id)
-)
-""")
-
-# ===== STUDENTS =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS students (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    full_name VARCHAR(100),
-    group_id INTEGER,
-    city VARCHAR(155),
-    login VARCHAR(100) UNIQUE,
-    password VARCHAR(100),
-    FOREIGN KEY(group_id) REFERENCES groups(id)
-)
-""")
-
-# ===== SCHEDULES =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS schedules (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    weekday TEXT,
-    time TEXT,
-    subject_id INTEGER,
-    teacher_id INTEGER,
-    group_id INTEGER,
-    FOREIGN KEY(subject_id) REFERENCES subjects(id),
-    FOREIGN KEY(teacher_id) REFERENCES teachers(id),
-    FOREIGN KEY(group_id) REFERENCES groups(id)
-)
-""")
-
-# ===== MARKS =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS marks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER,
-    subject_id INTEGER,
-    teacher_id INTEGER,
-    group_id INTEGER,
-    mark INTEGER,
-    put_date DATE,
-    FOREIGN KEY(student_id) REFERENCES students(id),
-    FOREIGN KEY(subject_id) REFERENCES subjects(id),
-    FOREIGN KEY(teacher_id) REFERENCES teachers(id),
-    FOREIGN KEY(group_id) REFERENCES groups(id)
-)
-""")
-
-# ===== HOMEWORKS =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS homeworks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject_id INTEGER,
-    teacher_id INTEGER,
-    group_id INTEGER,
-    task TEXT,
-    deadline DATE,
-    FOREIGN KEY(subject_id) REFERENCES subjects(id),
-    FOREIGN KEY(teacher_id) REFERENCES teachers(id),
-    FOREIGN KEY(group_id) REFERENCES groups(id)
-)
-""")
-
-#  === fedback ===
-
-cur.execute("""CREATE TABLE IF NOT EXISTS feedback (
-               id INTEGER PRIMARY KEY AUTOINCREMENT,
-                faq_id INTEGER,
-                user_id INTEGER,
-                liked INTEGER,
-                FOREIGN KEY(user_id) REFERENCES users(id),
-                FOREIGN KEY(faq_id) REFERENCES faqs(id)
-               )""")
 
 
+
+
+
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS users (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     telegram_id INTEGER UNIQUE,
+#     username TEXT,
+#     full_name TEXT,
+#     role TEXT CHECK(role IN ('teacher','student','unknown')) DEFAULT 'unknown'
+# )
+# """)
 #
-# # ===== FAQ =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS faq (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    question TEXT UNIQUE,
-    answer TEXT
-)
-""")
+# # ===== GROUPS =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS groups (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     name TEXT UNIQUE
+# )
+# """)
 #
-# # ===== EMOJIS =====
-cur.execute("""
-CREATE TABLE IF NOT EXISTS emojis (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    symbol TEXT
-)
-""")
+# # ===== SUBJECTS =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS subjects (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     name TEXT UNIQUE
+# )
+# """)
+#
+# # ===== TEACHERS =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS teachers (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     full_name VARCHAR(155),
+#     subject_id INTEGER,
+#     login VARCHAR(100) UNIQUE,
+#     password VARCHAR(100),
+#     FOREIGN KEY(subject_id) REFERENCES subjects(id)
+# )
+# """)
+#
+# # ===== STUDENTS =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS students (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     full_name VARCHAR(100),
+#     group_id INTEGER,
+#     city VARCHAR(155),
+#     login VARCHAR(100) UNIQUE,
+#     password VARCHAR(100),
+#     FOREIGN KEY(group_id) REFERENCES groups(id)
+# )
+# """)
+#
+# # ===== SCHEDULES =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS schedules (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     weekday TEXT,
+#     time TEXT,
+#     subject_id INTEGER,
+#     teacher_id INTEGER,
+#     group_id INTEGER,
+#     FOREIGN KEY(subject_id) REFERENCES subjects(id),
+#     FOREIGN KEY(teacher_id) REFERENCES teachers(id),
+#     FOREIGN KEY(group_id) REFERENCES groups(id)
+# )
+# """)
+#
+# # ===== MARKS =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS marks (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     student_id INTEGER,
+#     subject_id INTEGER,
+#     teacher_id INTEGER,
+#     group_id INTEGER,
+#     mark INTEGER,
+#     put_date DATE,
+#     FOREIGN KEY(student_id) REFERENCES students(id),
+#     FOREIGN KEY(subject_id) REFERENCES subjects(id),
+#     FOREIGN KEY(teacher_id) REFERENCES teachers(id),
+#     FOREIGN KEY(group_id) REFERENCES groups(id)
+# )
+# """)
+#
+# # ===== HOMEWORKS =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS homeworks (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     subject_id INTEGER,
+#     teacher_id INTEGER,
+#     group_id INTEGER,
+#     task TEXT,
+#     deadline DATE,
+#     FOREIGN KEY(subject_id) REFERENCES subjects(id),
+#     FOREIGN KEY(teacher_id) REFERENCES teachers(id),
+#     FOREIGN KEY(group_id) REFERENCES groups(id)
+# )
+# """)
+#
+# #  === fedback ===
+#
+# cur.execute("""CREATE TABLE IF NOT EXISTS feedback (
+#                id INTEGER PRIMARY KEY AUTOINCREMENT,
+#                 faq_id INTEGER,
+#                 user_id INTEGER,
+#                 liked INTEGER,
+#                 FOREIGN KEY(user_id) REFERENCES users(id),
+#                 FOREIGN KEY(faq_id) REFERENCES faqs(id)
+#                )""")
+#
+#
+# #
+# # # ===== FAQ =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS faq (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     question TEXT UNIQUE,
+#     answer TEXT
+# )
+# """)
+# #
+# # # ===== EMOJIS =====
+# cur.execute("""
+# CREATE TABLE IF NOT EXISTS emojis (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     symbol TEXT
+# )
+# """)
 
 
 # # ===== GROUPS =====

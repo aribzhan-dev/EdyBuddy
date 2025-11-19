@@ -188,3 +188,14 @@ def insert_feedback(user_id, faq_id, liked):
         conn.close()
 
 
+def insert_ai_log(telegram_id, username, request, response, model="deepseek"):
+    conn = connect()
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO ai_logs (telegram_id, username, user_request, ai_response)
+        VALUES (?, ?, ?, ?)
+    """, (telegram_id, username, request, response))
+    conn.commit()
+    conn.close()
+
+
