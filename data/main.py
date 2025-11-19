@@ -1,6 +1,6 @@
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-from handlers import start_handler, message_handler
-from config import BOT_TOKEN
+from bot.handlers import start_handler, message_handler
+from bot.config import BOT_TOKEN
 
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()

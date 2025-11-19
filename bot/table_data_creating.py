@@ -1,7 +1,7 @@
 import sqlite3
 from optparse import Values
 
-DB_PATH = "data/edubuddy.db"
+DB_PATH = "../data/edubuddy.db"
 
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()

@@ -1,10 +1,8 @@
 import requests
-import random
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telegram.ext import ContextTypes
-from datetime import datetime
-from database import *
-from config import DEEPSEEK_URL, AI_MODEL
+from bot.database import *
+from bot.config import DEEPSEEK_URL, AI_MODEL
 import re
 import difflib
 

@@ -59,7 +59,7 @@ config.ini
 settings_local.py
 *.secret
 token.txt
-config.py
+bot/config.py
 *.pem
 *.key
 
@@ -95,3 +95,6 @@ htmlcov/
 pytest_cache/
 
 .idea
+
+
+10.1.16.30
