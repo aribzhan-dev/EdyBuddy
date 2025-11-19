@@ -6,14 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>360</width>
-    <height>250</height>
+    <width>350</width>
+    <height>220</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Login</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+
+  <layout class="QVBoxLayout" name="mainLayout">
+
    <item>
     <widget class="QLineEdit" name="inputUser">
      <property name="placeholderText">
@@ -21,6 +23,7 @@
      </property>
     </widget>
    </item>
+
    <item>
     <widget class="QLineEdit" name="inputPass">
      <property name="echoMode">
@@ -31,23 +34,32 @@
      </property>
     </widget>
    </item>
+
    <item>
     <widget class="QPushButton" name="btnLogin">
+     <property name="minimumHeight">
+      <number>40</number>
+     </property>
      <property name="text">
       <string>Login</string>
      </property>
     </widget>
    </item>
+
    <item>
     <widget class="QLabel" name="labelStatus">
      <property name="text">
       <string></string>
      </property>
      <property name="styleSheet">
-      <string notr="true">color:red;</string>
+      <string>color:red;</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>
+
   </layout>
  </widget>
  <resources/>

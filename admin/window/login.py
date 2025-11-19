@@ -7,10 +7,9 @@ class LoginWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_LoginWindow()
         self.ui.setupUi(self)
+        self.ui.btnLogin.clicked.connect(self.login)
 
-        self.ui.btnLogin.clicked.connect(self.do_login)
-
-    def do_login(self):
+    def login(self):
         user = self.ui.inputUser.text()
         pwd = self.ui.inputPass.text()
 
@@ -19,4 +18,4 @@ class LoginWindow(QMainWindow):
             self.main.show()
             self.close()
         else:
-            self.ui.labelStatus.setText("Error: wrong credentials")
+            self.ui.labelStatus.setText("Incorrect login")
