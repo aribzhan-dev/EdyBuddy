@@ -8,7 +8,6 @@ from admin.window.login import LoginWindow
 def main():
     app = QApplication(sys.argv)
 
-    # QDarkStyle qo‘shish
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
 
     win = LoginWindow()

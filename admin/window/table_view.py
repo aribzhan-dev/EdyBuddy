@@ -131,9 +131,7 @@ class TableViewWindow(QWidget):
             self._filter_liked()
 
 
-    # ============================
-    #   DATE FILTER
-    # ============================
+
     def _filter_date(self, col):
         dialog = DateFilterDialog()
 

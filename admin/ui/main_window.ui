@@ -8,7 +8,6 @@
 
   <layout class="QHBoxLayout" name="mainLayout">
 
-   <!-- Sidebar: table list -->
    <item>
     <widget class="QListWidget" name="tableList">
      <property name="minimumWidth">
@@ -20,7 +19,6 @@
     </widget>
    </item>
 
-   <!-- Pages (stacked views) -->
    <item>
     <widget class="QStackedWidget" name="pages"/>
    </item>

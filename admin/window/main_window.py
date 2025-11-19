@@ -9,39 +9,19 @@ class MainWindow(QWidget):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
-        # Database
         self.db = Database()
-
-        # ======================
-        # 1) TABLE LIST PAGE
-        # ======================
-
-        # Sidebar already exists in ui: tableList
         self.tables_page = QWidget()
         self.tables_layout = QVBoxLayout(self.tables_page)
         self.tables_layout.setContentsMargins(0, 0, 0, 0)
         self.tables_layout.addWidget(self.ui.tableList)
-
-        # Add it to stacked widget
         self.ui.pages.addWidget(self.tables_page)
         self.ui.pages.setCurrentWidget(self.tables_page)
-
-        # Load table names
         self.load_tables()
-
-        # Open table on double click
         self.ui.tableList.itemDoubleClicked.connect(self.open_table)
-
-        # ======================
-        # SIDEBAR STYLE (UI)
-        # ======================
         self._apply_sidebar_style()
 
 
-    # ==========================
-    # LOAD TABLE LIST
-    # ==========================
+
     def load_tables(self):
         tables = self.db.get_tables()
         print("Tables:", tables)
@@ -52,31 +32,21 @@ class MainWindow(QWidget):
             self.ui.tableList.addItem(item)
 
 
-    # ==========================
-    # OPEN TABLE PAGE
-    # ==========================
+
     def open_table(self, item):
         table = item.text()
         self.table_page = TableViewWindow(table)
-
-        # Back signal
         self.table_page.goBack.connect(self.show_tables_page)
-
-        # Add to stacked widget
         self.ui.pages.addWidget(self.table_page)
         self.ui.pages.setCurrentWidget(self.table_page)
 
 
-    # ==========================
-    # RETURN BACK TO TABLE LIST
-    # ==========================
+
     def show_tables_page(self):
         self.ui.pages.setCurrentWidget(self.tables_page)
 
 
-    # ==========================
-    # SIDEBAR BEAUTIFUL DESIGN
-    # ==========================
+
     def _apply_sidebar_style(self):
         style = """
         QListWidget {
