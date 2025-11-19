@@ -1,26 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>450</width>
-    <height>500</height>
-   </rect>
-  </property>
+ <widget class="QWidget" name="MainWindow">
   <property name="windowTitle">
    <string>Admin Panel</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QListWidget" name="tableList"/>
-    </item>
-   </layout>
-  </widget>
+
+  <layout class="QHBoxLayout" name="mainLayout">
+
+   <!-- Sidebar: table list -->
+   <item>
+    <widget class="QListWidget" name="tableList">
+     <property name="minimumWidth">
+      <number>280</number>
+     </property>
+     <property name="maximumWidth">
+      <number>280</number>
+     </property>
+    </widget>
+   </item>
+
+   <!-- Pages (stacked views) -->
+   <item>
+    <widget class="QStackedWidget" name="pages"/>
+   </item>
+
+  </layout>
  </widget>
+
  <resources/>
  <connections/>
 </ui>

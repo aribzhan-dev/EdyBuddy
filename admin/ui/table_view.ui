@@ -1,31 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>TableView</class>
- <widget class="QWidget" name="TableView">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>700</width>
-    <height>500</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>Table Viewer</string>
-  </property>
+ <class>TablePage</class>
+ <widget class="QWidget" name="TablePage">
+
   <layout class="QVBoxLayout" name="verticalLayout">
+
+
+   <item>
+    <layout class="QHBoxLayout" name="topBar">
+
+     <item>
+        <widget class="QPushButton" name="btnBack">
+            <property name="text">
+                <string>Назад</string>
+            </property>
+        </widget>
+    </item>
+
+     <item>
+      <widget class="QLineEdit" name="inputSearch">
+       <property name="placeholderText"><string>Поиск...</string></property>
+      </widget>
+     </item>
+
+     <item>
+      <widget class="QPushButton" name="btnFilter">
+       <property name="text"><string>Фильтр</string></property>
+      </widget>
+     </item>
+
+     <item>
+      <widget class="QPushButton" name="btnAdd">
+       <property name="text"><string>Добавить</string></property>
+      </widget>
+     </item>
+
+   </layout>
+   </item>
+
+
    <item>
     <widget class="QTableWidget" name="tableWidget"/>
    </item>
-   <item>
-    <widget class="QPushButton" name="btnAdd">
-     <property name="text">
-      <string>Add New Record</string>
-     </property>
-    </widget>
-   </item>
+
   </layout>
+
  </widget>
- <resources/>
- <connections/>
 </ui>

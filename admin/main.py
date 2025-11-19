@@ -1,9 +1,21 @@
 import sys
 from PyQt5.QtWidgets import QApplication
+import qdarkstyle
+
 from admin.window.login import LoginWindow
 
-if __name__ == "__main__":
+
+def main():
     app = QApplication(sys.argv)
+
+    # QDarkStyle qo‘shish
+    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+
     win = LoginWindow()
     win.show()
+
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
