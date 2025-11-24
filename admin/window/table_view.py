@@ -96,7 +96,6 @@ class TableViewWindow(QWidget):
 
 
     def apply_filter(self):
-        # 1) Schedule special filter
         if self.table_name == "schedules" and "weekday" in self.columns:
             return self._filter_schedule_days()
 
@@ -216,7 +215,7 @@ class TableViewWindow(QWidget):
         cols = ", ".join(self.columns)
         placeholders = ", ".join(["?"] * len(self.columns))
         q = f"INSERT INTO {self.table_name} ({cols}) VALUES ({placeholders})"
-        self.db.execute(q, tuple(new_data.values()))
+        self.db.conn.execute(q, tuple(new_data.values()))
 
         self.load_data()
 
@@ -237,7 +236,7 @@ class TableViewWindow(QWidget):
         set_clause = ", ".join([f"{col}=?" for col in self.columns])
         q = f"UPDATE {self.table_name} SET {set_clause} WHERE {self.columns[0]}=?"
         params = tuple(updated.values()) + (row_id,)
-        self.db.execute(q, params)
+        self.db.conn.execute(q, params)
 
         self.load_data()
 
@@ -251,7 +250,7 @@ class TableViewWindow(QWidget):
             return
 
         q = f"DELETE FROM {self.table_name} WHERE {self.columns[0]}=?"
-        self.db.execute(q, (row_id,))
+        self.db.conn.execute(q, (row_id,))
         self.load_data()
 
 
