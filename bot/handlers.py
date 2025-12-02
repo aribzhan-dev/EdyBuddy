@@ -1,10 +1,11 @@
 import requests
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telegram.ext import ContextTypes
-from bot.database import *
+from bot.db import *
 from bot.config import DEEPSEEK_URL, AI_MODEL
 import re
 import difflib
+import asyncio
 
 user_state = {}
 

@@ -1,17 +1,18 @@
 import psycopg2
 from datetime import date, datetime
 import random
-from bot.config import POSTGRES_URL
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+POSTGRES_URL = os.getenv("POSTGRES_URL")
+
+
 
 
 def connect():
-    return psycopg2.connect(
-        database=POSTGRES_URL["database"],
-        user=POSTGRES_URL["user"],
-        password=POSTGRES_URL["password"],
-        host=POSTGRES_URL["host"],
-        port=POSTGRES_URL["port"],
-    )
+    return psycopg2.connect(POSTGRES_URL)
 
 
 
@@ -161,10 +162,12 @@ def get_students_by_teacher(teacher_id):
     c = conn.cursor()
 
     c.execute("""
-        SELECT DISTINCT st.id, st.full_name
-        FROM students st
-        JOIN marks m ON m.student_id = st.id
-        WHERE m.teacher_id = %s
+    SELECT s.id, s.full_name
+    FROM students s
+    JOIN groups g ON s.group_id = g.id
+    JOIN schedules sch ON sch.group_id = g.id
+    WHERE sch.teacher_id = %s
+    GROUP BY s.id, s.full_name
     """, (teacher_id,))
 
     rows = c.fetchall()
@@ -231,14 +234,14 @@ def insert_feedback(user_id, faq_id, liked):
 
 
 
-def insert_ai_log(telegram_id, username, request, response, model="deepseek"):
+def insert_ai_log(telegram_id, username, request, response):
     conn = connect()
     c = conn.cursor()
 
     c.execute("""
-        INSERT INTO ai_logs (telegram_id, username, user_request, ai_response, model)
+        INSERT INTO ai_logs (telegram_id, username, user_request, ai_response)
         VALUES (%s, %s, %s, %s, %s)
-    """, (telegram_id, username, request, response, model))
+    """, (telegram_id, username, request, response))
 
     conn.commit()
     conn.close()

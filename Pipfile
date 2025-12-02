@@ -8,6 +8,8 @@ python-telegram-bot = "*"
 requests = "*"
 pyqt5 = "*"
 qdarkstyle = "*"
+psycopg2-binary = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
