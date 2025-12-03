@@ -2,14 +2,7 @@ import psycopg2
 from datetime import date, datetime
 import random
 import os
-from dotenv import load_dotenv
-
-
-load_dotenv()
-POSTGRES_URL = os.getenv("POSTGRES_URL")
-
-
-
+from bot.config import POSTGRES_URL
 
 def connect():
     return psycopg2.connect(POSTGRES_URL)

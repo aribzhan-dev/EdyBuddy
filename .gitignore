@@ -53,7 +53,7 @@ dist/
 MANIFEST
 
 # Environment / config files
-.env
+bot/config.py
 config.json
 config.ini
 settings_local.py
@@ -95,6 +95,7 @@ htmlcov/
 pytest_cache/
 
 .idea
+Pipfile
+Pipfile.lock
 
 
-10.1.16.30
