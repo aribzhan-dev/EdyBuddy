@@ -293,13 +293,11 @@ async def handle_faq_feedback(update, context, state):
     telegram_id = update.effective_user.id
     faq_id = state.get("faq_id")
 
-
     conn = connect()
     c = conn.cursor()
     c.execute("SELECT id FROM users WHERE telegram_id = %s", (telegram_id,))
     row = c.fetchone()
     conn.close()
-
     user_id = row[0] if row else None
 
     if text == "✅ Ответ полезный":
@@ -311,6 +309,25 @@ async def handle_faq_feedback(update, context, state):
         if user_id:
             insert_feedback(user_id, faq_id, 0)
         await update.message.reply_text("😔 Жаль! Попробуйте иначе.", reply_markup=ReplyKeyboardRemove())
+
+
+    if text == "🆕 Задать новый вопрос":
+        state["step"] = "faq"
+        await update.message.reply_text("Введите ваш вопрос:")
+        return
+
+
+    if text == "🏠 Главное меню":
+        state["step"] = "menu"
+        role = state["role"]
+
+        if role == "teacher":
+            await show_teacher_menu(update, context)
+        else:
+            await show_student_menu(update, context)
+
+        return
+
 
     keyboard = [
         [KeyboardButton("🆕 Задать новый вопрос")],
