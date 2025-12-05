@@ -1,24 +1,23 @@
 import psycopg2
 from datetime import date, datetime
 import random
-import os
 from bot.config import POSTGRES_URL
+
 
 def connect():
     return psycopg2.connect(POSTGRES_URL)
 
 
+# ---------------- USERS ----------------
 
 def insert_user(telegram_id, username, full_name, role="unknown"):
     conn = connect()
     c = conn.cursor()
-
     c.execute("""
         INSERT INTO users (telegram_id, username, full_name, role)
         VALUES (%s, %s, %s, %s)
         ON CONFLICT (telegram_id) DO NOTHING
     """, (telegram_id, username, full_name, role))
-
     conn.commit()
     conn.close()
 
@@ -26,11 +25,12 @@ def insert_user(telegram_id, username, full_name, role="unknown"):
 def delete_user(telegram_id):
     conn = connect()
     c = conn.cursor()
-    c.execute("DELETE FROM users WHERE telegram_id = %s", (telegram_id,))
+    c.execute("DELETE FROM users WHERE telegram_id=%s", (telegram_id,))
     conn.commit()
     conn.close()
 
 
+# ---------------- LOGIN ----------------
 
 def check_login(role, login, password):
     conn = connect()
@@ -38,34 +38,33 @@ def check_login(role, login, password):
 
     if role == "teacher":
         c.execute("""
-            SELECT id, full_name 
-            FROM teachers 
+            SELECT id, full_name
+            FROM teachers
             WHERE login=%s AND password=%s
         """, (login, password))
     else:
         c.execute("""
-            SELECT id, full_name, group_id 
-            FROM students 
+            SELECT id, full_name, group_id
+            FROM students
             WHERE login=%s AND password=%s
         """, (login, password))
 
-    result = c.fetchone()
+    row = c.fetchone()
     conn.close()
-    return result
+    return row
 
 
+# ---------------- MARKS ----------------
 
 def insert_mark(student_id, subject_id, teacher_id, mark):
     conn = connect()
     c = conn.cursor()
 
-
-    c.execute("SELECT group_id FROM students WHERE id = %s", (student_id,))
+    c.execute("SELECT group_id FROM students WHERE id=%s", (student_id,))
     row = c.fetchone()
-
     if not row:
         conn.close()
-        return "❌ Студент с таким ID не найден."
+        return "❌ Студент не найден."
 
     group_id = row[0]
 
@@ -76,111 +75,78 @@ def insert_mark(student_id, subject_id, teacher_id, mark):
 
     conn.commit()
     conn.close()
-    return "✅ Оценка успешно добавлена!"
+    return "✅ Оценка добавлена!"
 
 
 def get_student_marks(student_id):
     conn = connect()
     c = conn.cursor()
-
     c.execute("""
         SELECT s.name, m.mark, m.put_date, t.full_name
         FROM marks m
         JOIN subjects s ON m.subject_id = s.id
-        JOIN teachers t ON m.teacher_id = t.id
+        JOIN teachers t ON t.id = m.teacher_id
         WHERE m.student_id = %s
         ORDER BY m.put_date DESC
     """, (student_id,))
-
     rows = c.fetchall()
     conn.close()
     return rows
 
 
-# ===== HOMEWORKS =====
-def get_homeworks_for_student(group_id):
+# ---------------- HOMEWORKS ----------------
+
+def get_homeworks_for_student(group_id, lang):
     conn = connect()
     c = conn.cursor()
-
     c.execute("""
-        SELECT s.name, h.task, h.deadline, t.full_name
+        SELECT s.name, h.title, h.description, h.deadline, t.full_name
         FROM homeworks h
         JOIN subjects s ON h.subject_id = s.id
         JOIN teachers t ON h.teacher_id = t.id
-        WHERE h.group_id = %s
+        WHERE h.group_id=%s AND h.lang_code=%s
         ORDER BY h.deadline ASC
-    """, (group_id,))
-
+    """, (group_id, lang))
     rows = c.fetchall()
     conn.close()
     return rows
 
 
+# ---------------- FAQ ----------------
 
-def get_faq_answer(question_text):
+def get_faq(lang):
     conn = connect()
     c = conn.cursor()
-
-    clean_text = question_text.lower().replace('?', '').replace('!', '').replace('.', '').strip()
-
-    c.execute("SELECT question, answer FROM faq")
+    c.execute("SELECT id, question, answer FROM faq WHERE lang_code=%s", (lang,))
     rows = c.fetchall()
-
-    for q, a in rows:
-        q_clean = q.lower().replace('?', '').replace('!', '').replace('.', '').strip()
-        if q_clean == clean_text:
-            conn.close()
-            return a
-
     conn.close()
-    return "❓ Ответ не найден."
+    return rows
 
 
-
-def get_random_emoji():
+def insert_feedback(user_id, faq_id, liked):
     conn = connect()
     c = conn.cursor()
-
-    c.execute("SELECT symbol FROM emojis")
-    all_emo = [row[0] for row in c.fetchall()]
-
-    conn.close()
-
-    return random.choice(all_emo) if all_emo else "🙂"
-
-
-
-def get_students_by_teacher(teacher_id):
-    conn = connect()
-    c = conn.cursor()
-
     c.execute("""
-    SELECT s.id, s.full_name
-    FROM students s
-    JOIN groups g ON s.group_id = g.id
-    JOIN schedules sch ON sch.group_id = g.id
-    WHERE sch.teacher_id = %s
-    GROUP BY s.id, s.full_name
-    """, (teacher_id,))
-
-    rows = c.fetchall()
+        INSERT INTO feedback (faq_id, user_id, liked)
+        VALUES (%s, %s, %s)
+    """, (faq_id, user_id, liked))
+    conn.commit()
     conn.close()
-    return rows
 
 
+# ---------------- SCHEDULES ----------------
 
 def get_schedule_for_student(group_id):
     conn = connect()
     c = conn.cursor()
-
     weekday = datetime.now().strftime("%A")
 
     c.execute("""
         SELECT s.name, sch.time, t.full_name
         FROM schedules sch
-        JOIN subjects s ON sch.subject_id = s.id
-        JOIN teachers t ON sch.teacher_id = t.id
-        WHERE sch.group_id = %s AND sch.weekday = %s
+        JOIN subjects s ON sch.subject_id=s.id
+        JOIN teachers t ON sch.teacher_id=t.id
+        WHERE sch.group_id=%s AND sch.weekday=%s
         ORDER BY sch.time
     """, (group_id, weekday))
 
@@ -192,15 +158,14 @@ def get_schedule_for_student(group_id):
 def get_schedule_for_teacher(teacher_id):
     conn = connect()
     c = conn.cursor()
-
     weekday = datetime.now().strftime("%A")
 
     c.execute("""
         SELECT s.name, sch.time, g.name
         FROM schedules sch
-        JOIN subjects s ON sch.subject_id = s.id
-        JOIN groups g ON sch.group_id = g.id
-        WHERE sch.teacher_id = %s AND sch.weekday = %s
+        JOIN subjects s ON sch.subject_id=s.id
+        JOIN groups g ON sch.group_id=g.id
+        WHERE sch.teacher_id=%s AND sch.weekday=%s
         ORDER BY sch.time
     """, (teacher_id, weekday))
 
@@ -209,32 +174,30 @@ def get_schedule_for_teacher(teacher_id):
     return rows
 
 
+# ---------------- STUDENTS ----------------
 
-def insert_feedback(user_id, faq_id, liked):
+def get_students_by_teacher(teacher_id):
     conn = connect()
     c = conn.cursor()
-
-    try:
-        c.execute("""
-            INSERT INTO feedback (faq_id, user_id, liked)
-            VALUES (%s, %s, %s)
-        """, (faq_id, user_id, liked))
-        conn.commit()
-    except Exception as e:
-        print("[DB ERROR] Feedback insert failed:", e)
-    finally:
-        conn.close()
+    c.execute("""
+        SELECT DISTINCT s.id, s.full_name
+        FROM students s
+        JOIN schedules sch ON sch.group_id = s.group_id
+        WHERE sch.teacher_id = %s
+    """, (teacher_id,))
+    rows = c.fetchall()
+    conn.close()
+    return rows
 
 
+# ---------------- LOGS ----------------
 
-def insert_ai_log(telegram_id, username, request, response):
+def insert_ai_log(telegram_id, username, user_request, ai_response):
     conn = connect()
     c = conn.cursor()
-
     c.execute("""
         INSERT INTO ai_logs (telegram_id, username, user_request, ai_response)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (telegram_id, username, request, response))
-
+        VALUES (%s, %s, %s, %s)
+    """, (telegram_id, username or "", user_request, ai_response))
     conn.commit()
     conn.close()
