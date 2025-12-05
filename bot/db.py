@@ -30,7 +30,7 @@ def delete_user(telegram_id):
     conn.close()
 
 
-# ---------------- LOGIN ----------------
+
 
 def check_login(role, login, password):
     conn = connect()
@@ -54,20 +54,20 @@ def check_login(role, login, password):
     return row
 
 
-# ---------------- MARKS ----------------
 
-def insert_mark(student_id, subject_id, teacher_id, mark):
+
+def insert_mark(student_id, subject_id, teacher_id, mark, lang="ru"):
     conn = connect()
     c = conn.cursor()
 
     c.execute("SELECT group_id FROM students WHERE id=%s", (student_id,))
     row = c.fetchone()
+
     if not row:
         conn.close()
-        return "❌ Студент не найден."
+        return "❌ Студент не найден." if lang == "ru" else "❌ Студент табылмады."
 
     group_id = row[0]
-
     c.execute("""
         INSERT INTO marks (student_id, subject_id, teacher_id, group_id, mark, put_date)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -75,7 +75,8 @@ def insert_mark(student_id, subject_id, teacher_id, mark):
 
     conn.commit()
     conn.close()
-    return "✅ Оценка добавлена!"
+
+    return "✅ Оценка добавлена!" if lang == "ru" else "✅ Баға қойылды!"
 
 
 def get_student_marks(student_id):
@@ -94,7 +95,7 @@ def get_student_marks(student_id):
     return rows
 
 
-# ---------------- HOMEWORKS ----------------
+
 
 def get_homeworks_for_student(group_id, lang):
     conn = connect()
@@ -112,7 +113,7 @@ def get_homeworks_for_student(group_id, lang):
     return rows
 
 
-# ---------------- FAQ ----------------
+
 
 def get_faq(lang):
     conn = connect()
@@ -134,7 +135,7 @@ def insert_feedback(user_id, faq_id, liked):
     conn.close()
 
 
-# ---------------- SCHEDULES ----------------
+
 
 def get_schedule_for_student(group_id):
     conn = connect()

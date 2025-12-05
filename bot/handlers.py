@@ -193,7 +193,7 @@ async def teacher_actions(update, state):
     if state.get("step") == "put_mark":
         try:
             sid, mark = map(int, text.split())
-            msg = insert_mark(sid, 1, tid, mark)
+            msg = insert_mark(sid, 1, tid, mark, lang)
             await update.message.reply_text(msg)
             state["step"] = "menu"
             return
