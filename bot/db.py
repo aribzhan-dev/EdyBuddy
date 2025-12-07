@@ -8,7 +8,7 @@ def connect():
     return psycopg2.connect(POSTGRES_URL)
 
 
-# ---------------- USERS ----------------
+
 
 def insert_user(telegram_id, username, full_name, role="unknown"):
     conn = connect()
@@ -175,7 +175,7 @@ def get_schedule_for_teacher(teacher_id):
     return rows
 
 
-# ---------------- STUDENTS ----------------
+
 
 def get_students_by_teacher(teacher_id):
     conn = connect()
@@ -191,7 +191,7 @@ def get_students_by_teacher(teacher_id):
     return rows
 
 
-# ---------------- LOGS ----------------
+
 
 def insert_ai_log(telegram_id, username, user_request, ai_response):
     conn = connect()
@@ -200,5 +200,28 @@ def insert_ai_log(telegram_id, username, user_request, ai_response):
         INSERT INTO ai_logs (telegram_id, username, user_request, ai_response)
         VALUES (%s, %s, %s, %s)
     """, (telegram_id, username or "", user_request, ai_response))
+    conn.commit()
+    conn.close()
+
+
+
+def update_login(role, user_id, new_login):
+    conn = connect()
+    c = conn.cursor()
+
+    table = "teachers" if role == "teacher" else "students"
+
+    c.execute(f"UPDATE {table} SET login=%s WHERE id=%s", (new_login, user_id))
+    conn.commit()
+    conn.close()
+
+
+def update_password(role, user_id, new_pass):
+    conn = connect()
+    c = conn.cursor()
+
+    table = "teachers" if role == "teacher" else "students"
+
+    c.execute(f"UPDATE {table} SET password=%s WHERE id=%s", (new_pass, user_id))
     conn.commit()
     conn.close()
