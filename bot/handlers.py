@@ -54,6 +54,7 @@ TEXTS = {
     "enter_new_password": {"ru": "Введите новый пароль:", "kz": "Жаңа құпиясөз енгізіңіз:"},
     "change_success_login": {"ru": "✅ Логин успешно изменён!", "kz": "✅ Логин сәтті өзгертілді!"},
     "change_success_password": {"ru": "✅ Пароль успешно изменён!", "kz": "✅ Құпиясөз сәтті өзгертілді!"},
+    "map_btn": {"ru": "🗺 Карта AITU", "kz": "🗺 AITU картасы"},
     "exit_btn": {"ru": "🚪 Выйти", "kz": "🚪 Шығу"}
 }
 
@@ -180,6 +181,11 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await student_actions(update, state)
 
+    if state == "map":
+        await update.message.reply_text("🔗 AITU Map:")
+        await update.message.reply_text("https://yuujiso.github.io/aitumap/")
+        return
+
 
 
 async def show_teacher_menu(update, state):
@@ -188,7 +194,7 @@ async def show_teacher_menu(update, state):
     kb = [
         [KeyboardButton(TEXTS["teacher_students"][lang]), KeyboardButton(TEXTS["teacher_putmark"][lang])],
         [KeyboardButton(TEXTS["teacher_schedule"][lang]), KeyboardButton(TEXTS["faq_btn"][lang])],
-        [KeyboardButton(TEXTS["settings_btn"][lang])],
+        [KeyboardButton(TEXTS["settings_btn"][lang]), KeyboardButton(TEXTS["map_btn"][lang])],
         [KeyboardButton(TEXTS["exit_btn"][lang])]
     ]
 
@@ -204,7 +210,7 @@ async def show_student_menu(update, state):
     kb = [
         [KeyboardButton(TEXTS["student_marks"][lang]), KeyboardButton(TEXTS["student_today"][lang])],
         [KeyboardButton(TEXTS["student_hw"][lang]), KeyboardButton(TEXTS["faq_btn"][lang])],
-        [KeyboardButton(TEXTS["settings_btn"][lang])],
+        [KeyboardButton(TEXTS["settings_btn"][lang]), KeyboardButton(TEXTS["map_btn"][lang])],
         [KeyboardButton(TEXTS["exit_btn"][lang])]
     ]
 
@@ -266,6 +272,12 @@ async def teacher_actions(update, state):
         await settings_actions(update, state)
         return
 
+    if text == TEXTS["map_btn"][lang]:
+        state["step"] = "map"
+        await update.message.reply_text("Открываю карту..." if lang == "ru" else "Картаны ашамын...")
+        await update.message.reply_text("https://yuujiso.github.io/aitumap/")
+        return
+
     if text == TEXTS["exit_btn"][lang]:
         del user_state[update.effective_chat.id]
         await start_handler(update, None)
@@ -318,6 +330,12 @@ async def student_actions(update, state):
     if text == TEXTS["settings_btn"][lang]:
         state["step"] = "settings"
         await settings_actions(update, state)
+        return
+
+    if text == TEXTS["map_btn"][lang]:
+        state["step"] = "map"
+        await update.message.reply_text("Открываю карту..." if lang == "ru" else "Картаны ашамын...")
+        await update.message.reply_text("https://yuujiso.github.io/aitumap/")
         return
 
     if text == TEXTS["exit_btn"][lang]:
