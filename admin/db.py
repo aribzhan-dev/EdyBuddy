@@ -1,37 +1,56 @@
-import sqlite3
-import os
+import psycopg2
+import psycopg2.extras
+from bot.config import POSTGRES_URL
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "edubuddy.db")
-DB_PATH = os.path.abspath(DB_PATH)
+
+def connect():
+    return psycopg2.connect(POSTGRES_URL)
+
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect(DB_PATH)
-        self.conn.row_factory = sqlite3.Row
+        self.conn = psycopg2.connect(POSTGRES_URL)
+        self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
 
     def fetchall(self, sql, params=()):
-        cur = self.conn.cursor()
-        cur.execute(sql, params)
-        return cur.fetchall()
+        self.cur.execute(sql, params)
+        return self.cur.fetchall()
 
     def fetchone(self, sql, params=()):
-        cur = self.conn.cursor()
-        cur.execute(sql, params)
-        return cur.fetchone()
+        self.cur.execute(sql, params)
+        return self.cur.fetchone()
 
     def get_tables(self):
         q = """
-        SELECT name FROM sqlite_master 
-        WHERE type='table' AND name NOT LIKE 'sqlite_%'
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        ORDER BY table_name;
         """
-        rows = self.conn.execute(q).fetchall()
-        return [r["name"] for r in rows]
+        self.cur.execute(q)
+        rows = self.cur.fetchall()
+        return [r["table_name"] for r in rows]
+
 
     def get_columns(self, table):
-        q = f"PRAGMA table_info({table})"
-        rows = self.conn.execute(q).fetchall()
-        return [r["name"] for r in rows]
+        q = """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = %s
+        ORDER BY ordinal_position;
+        """
+        self.cur.execute(q, (table,))
+        rows = self.cur.fetchall()
+        return [r["column_name"] for r in rows]
 
-    def get_rows(self, table):
-        q = f"SELECT * FROM {table}"
-        return self.conn.execute(q).fetchall()
+
+    def get_rows(self, table, limit=100):
+        q = f"SELECT * FROM {table} LIMIT %s"
+        self.cur.execute(q, (limit,))
+        return self.cur.fetchall()
+
+
+    def close(self):
+        self.cur.close()
+        self.conn.close()

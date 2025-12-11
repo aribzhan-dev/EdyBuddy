@@ -26,7 +26,7 @@ def delete_user(telegram_id):
     conn.close()
 
 
-# ===== LOGIN CHECK =====
+
 def check_login(role, login, password):
     conn = connect()
     c = conn.cursor()
@@ -39,7 +39,7 @@ def check_login(role, login, password):
     return result
 
 
-# ===== MARKS =====
+
 def insert_mark(student_id, subject_id, teacher_id, mark):
     conn = connect()
     c = conn.cursor()
@@ -78,7 +78,7 @@ def get_student_marks(student_id):
     return data
 
 
-# ===== HOMEWORKS =====
+
 def get_homeworks_for_student(group_id):
     conn = connect()
     c = conn.cursor()
