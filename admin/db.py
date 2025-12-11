@@ -12,6 +12,10 @@ class Database:
         self.conn = psycopg2.connect(POSTGRES_URL)
         self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    def execute(self, q, params=()):
+        self.cur.execute(q, params)
+        self.conn.commit()
+
 
     def fetchall(self, sql, params=()):
         self.cur.execute(sql, params)
@@ -49,6 +53,17 @@ class Database:
         q = f"SELECT * FROM {table} LIMIT %s"
         self.cur.execute(q, (limit,))
         return self.cur.fetchall()
+
+
+    def insert_row(self, table, data: dict):
+        cols = ", ".join(data.keys())
+        placeholders = ", ".join(["%s"] * len(data))
+        values = list(data.values())
+
+        q = f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
+
+        self.cur.execute(q, values)
+        self.conn.commit()
 
 
     def close(self):

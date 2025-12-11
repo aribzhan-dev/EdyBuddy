@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QWidget, QTableWidgetItem, QMenu, QAction, QMessageBox,
     QInputDialog, QDialog, QVBoxLayout, QLabel, QPushButton,
-    QHBoxLayout, QCalendarWidget
+    QHBoxLayout, QCalendarWidget, QLineEdit
 )
 from PyQt5.QtCore import pyqtSignal
 from admin.window.table_view_ui import Ui_TablePage
@@ -67,7 +67,6 @@ class TableViewWindow(QWidget):
         self.load_data()
 
 
-
     def load_data(self, rows=None):
         if rows is None:
             rows = self.db.get_rows(self.table_name)
@@ -82,27 +81,27 @@ class TableViewWindow(QWidget):
 
 
 
+
     def search_filter(self):
         text = self.ui.inputSearch.text().strip()
 
         if not text:
             return self.load_data()
 
-        sql_parts = [f"{col} LIKE '%{text}%'" for col in self.columns]
+        sql_parts = [f"{col} ILIKE %s" for col in self.columns]
         query = f"SELECT * FROM {self.table_name} WHERE " + " OR ".join(sql_parts)
-        rows = self.db.fetchall(query)
+        params = [f"%{text}%"] * len(self.columns)
+
+        rows = self.db.fetchall(query, params)
         self.load_data(rows)
 
 
-
     def apply_filter(self):
-        if self.table_name == "schedules" and "weekday" in self.columns:
-            return self._filter_schedule_days()
-
         options = []
 
         date_cols = [c for c in self.columns if c.lower() in
                      ["put_date", "date", "created_at", "updated_at", "deadline"]]
+
         if date_cols:
             options.append("Date")
 
@@ -116,16 +115,15 @@ class TableViewWindow(QWidget):
             QMessageBox.information(self, "Нет фильтров", "Фильтры недоступны.")
             return
 
-        chosen, ok = QInputDialog.getItem(
-            self, "Выберите фильтр", "Тип:", options, 0, False
-        )
+        chosen, ok = QInputDialog.getItem(self, "Фильтр", "Выберите:", options, 0, False)
+
         if not ok:
             return
 
         if chosen == "Date":
             self._filter_date(date_cols[0])
         elif chosen == "Mark":
-            self._filter_mark_unique()
+            self._filter_mark()
         elif chosen == "Liked":
             self._filter_liked()
 
@@ -137,69 +135,45 @@ class TableViewWindow(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             d1, d2 = dialog.get_dates()
 
-            q = f"SELECT * FROM {self.table_name} WHERE {col} BETWEEN ? AND ?"
+            q = f"SELECT * FROM {self.table_name} WHERE {col} BETWEEN %s AND %s"
             rows = self.db.fetchall(q, (d1, d2))
 
             self.load_data(rows)
 
 
 
-    def _filter_mark_unique(self):
+    def _filter_mark(self):
         q = f"SELECT DISTINCT mark FROM {self.table_name} ORDER BY mark DESC"
-        marks = [str(r[0]) for r in self.db.fetchall(q)]
+        marks = [str(r["mark"]) for r in self.db.fetchall(q)]
         marks.insert(0, "All")
 
-        chosen, ok = QInputDialog.getItem(self, "Фильтр по оценке", "Оценка:", marks, 0, False)
+        chosen, ok = QInputDialog.getItem(self, "Оценки", "Выберите:", marks, 0, False)
         if not ok:
             return
 
         if chosen == "All":
             return self.load_data()
 
-        q = f"SELECT * FROM {self.table_name} WHERE mark = ?"
+        q = f"SELECT * FROM {self.table_name} WHERE mark = %s"
         rows = self.db.fetchall(q, (chosen,))
         self.load_data(rows)
+
 
 
     def _filter_liked(self):
         options = ["All", "1 (Liked)", "0 (Not liked)"]
 
-        chosen, ok = QInputDialog.getItem(self, "Liked Filter", "Choose:", options, 0, False)
+        chosen, ok = QInputDialog.getItem(self, "Liked", "Choose:", options, 0, False)
         if not ok:
             return
 
         if chosen == "All":
             return self.load_data()
 
-        liked_val = 1 if chosen.startswith("1") else 0
-        q = f"SELECT * FROM {self.table_name} WHERE liked = ?"
-        rows = self.db.fetchall(q, (liked_val,))
-        self.load_data(rows)
+        liked_value = 1 if chosen.startswith("1") else 0
 
-
-
-    def _filter_schedule_days(self):
-        q = f"SELECT DISTINCT weekday FROM {self.table_name} ORDER BY weekday"
-        days = [str(r[0]) for r in self.db.fetchall(q)]
-
-        days.insert(0, "All")
-
-        chosen, ok = QInputDialog.getItem(
-            self,
-            "Filter by Day of Week",
-            "Choose day:",
-            days,
-            0,
-            False,
-        )
-        if not ok:
-            return
-
-        if chosen == "All":
-            return self.load_data()
-
-        q = f"SELECT * FROM {self.table_name} WHERE weekday = ?"
-        rows = self.db.fetchall(q, (chosen,))
+        q = f"SELECT * FROM {self.table_name} WHERE liked = %s"
+        rows = self.db.fetchall(q, (liked_value,))
         self.load_data(rows)
 
 
@@ -207,16 +181,16 @@ class TableViewWindow(QWidget):
     def add_row(self):
         new_data = {}
         for col in self.columns:
+            if col == "id":
+                continue
+
             text, ok = QInputDialog.getText(self, "Добавить запись", f"{col}:")
             if not ok:
                 return
+
             new_data[col] = text
 
-        cols = ", ".join(self.columns)
-        placeholders = ", ".join(["?"] * len(self.columns))
-        q = f"INSERT INTO {self.table_name} ({cols}) VALUES ({placeholders})"
-        self.db.conn.execute(q, tuple(new_data.values()))
-
+        self.db.insert_row(self.table_name, new_data)
         self.load_data()
 
 
@@ -227,30 +201,38 @@ class TableViewWindow(QWidget):
 
         updated = {}
         for i, col in enumerate(self.columns):
+            if col == "id":
+                continue
+
             old_val = self.ui.tableWidget.item(row_index, i).text()
             new_val, ok = QInputDialog.getText(self, f"Редактировать {col}", col, text=old_val)
             if not ok:
                 return
             updated[col] = new_val
 
-        set_clause = ", ".join([f"{col}=?" for col in self.columns])
-        q = f"UPDATE {self.table_name} SET {set_clause} WHERE {self.columns[0]}=?"
-        params = tuple(updated.values()) + (row_id,)
-        self.db.conn.execute(q, params)
+        set_clause = ", ".join([f"{col}=%s" for col in updated.keys()])
+        params = list(updated.values()) + [row_id]
+
+        q = f"UPDATE {self.table_name} SET {set_clause} WHERE id=%s"
+        self.db.execute(q, params)
 
         self.load_data()
+
 
 
     def delete_row(self, row_index):
         row_id = self.ui.tableWidget.item(row_index, 0).text()
 
-        confirm = QMessageBox.question(self, "Удалить?", "Вы уверены?",
-            QMessageBox.Yes | QMessageBox.No)
+        confirm = QMessageBox.question(
+            self, "Удалить?", "Вы уверены?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
         if confirm == QMessageBox.No:
             return
 
-        q = f"DELETE FROM {self.table_name} WHERE {self.columns[0]}=?"
-        self.db.conn.execute(q, (row_id,))
+        q = f"DELETE FROM {self.table_name} WHERE id=%s"
+        self.db.execute(q, (row_id,))
         self.load_data()
 
 
@@ -264,13 +246,14 @@ class TableViewWindow(QWidget):
         menu.addAction(edit_action)
         menu.addAction(delete_action)
 
-        action = menu.exec_(self.ui.tableWidget.mapToGlobal(pos))
         row = self.ui.tableWidget.currentRow()
+        action = menu.exec_(self.ui.tableWidget.mapToGlobal(pos))
 
         if row < 0:
             return
 
         if action == edit_action:
             self.edit_row(self.ui.tableWidget.item(row, 0))
+
         elif action == delete_action:
             self.delete_row(row)
