@@ -9,7 +9,9 @@ class MainWindow(QWidget):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
         self.db = Database()
+
         self.tables_page = QWidget()
         self.tables_layout = QVBoxLayout(self.tables_page)
         self.tables_layout.setContentsMargins(0, 0, 0, 0)
@@ -21,30 +23,28 @@ class MainWindow(QWidget):
         self._apply_sidebar_style()
 
 
-
     def load_tables(self):
         tables = self.db.get_tables()
         print("Tables:", tables)
-        self.ui.tableList.clear()
 
+        self.ui.tableList.clear()
         for t in tables:
             item = QListWidgetItem(t)
             self.ui.tableList.addItem(item)
 
 
-
     def open_table(self, item):
         table = item.text()
+
         self.table_page = TableViewWindow(table)
         self.table_page.goBack.connect(self.show_tables_page)
+
         self.ui.pages.addWidget(self.table_page)
         self.ui.pages.setCurrentWidget(self.table_page)
 
 
-
     def show_tables_page(self):
         self.ui.pages.setCurrentWidget(self.tables_page)
-
 
 
     def _apply_sidebar_style(self):
@@ -79,6 +79,5 @@ class MainWindow(QWidget):
             font-size: 17px;
         }
         """
-
         self.ui.tableList.setFixedWidth(280)
         self.ui.tableList.setStyleSheet(style)
