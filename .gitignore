@@ -98,4 +98,6 @@ pytest_cache/
 Pipfile
 Pipfile.lock
 
+db/backup
+
 

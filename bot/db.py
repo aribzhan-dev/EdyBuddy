@@ -3,7 +3,6 @@ from datetime import date, datetime
 import random
 from bot.config import POSTGRES_URL
 
-
 def connect():
     return psycopg2.connect(POSTGRES_URL)
 
