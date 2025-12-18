@@ -99,5 +99,5 @@ Pipfile
 Pipfile.lock
 
 db/backup
-
+.idea
 
