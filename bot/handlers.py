@@ -457,15 +457,16 @@ async def handle_faq(update, state):
     await update.message.reply_text("Ищу ответ..." if lang == "ru" else "Жауап ізделуде...")
 
     try:
-        resp = requests.post(DEEPSEEK_URL, json={
-            "model": AI_MODEL,
-            "prompt": f"Ответь кратко: {query}",
-            "stream": False
-        }, timeout=40)
-
+        resp = requests.post(
+            DEEPSEEK_URL,
+            json={...},
+            timeout=20
+        )
         ai_ans = resp.json().get("response", "⚠️ Ошибка")
-    except:
-        ai_ans = "⚠️ Ошибка подключения"
+    except requests.exceptions.Timeout:
+        ai_ans = "⚠️ Сервер жауап бермеді. Кейінірек көріңіз."
+    except Exception:
+        ai_ans = "⚠️ Қате орын алды."
 
     insert_ai_log(update.effective_user.id, update.effective_user.username, query, ai_ans)
 
@@ -474,6 +475,7 @@ async def handle_faq(update, state):
         [KeyboardButton(TEXTS["main_menu"][lang])]
     ]
 
+    await update.message.reply_text("Жауап дайындалуда...")
     await update.message.reply_text(ai_ans, reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True))
 
     state["step"] = "faq_feedback"
