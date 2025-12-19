@@ -2,7 +2,7 @@ import sqlite3
 import os
 from optparse import Values
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "edubuddy.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "edubuddy.scripts")
 DB_PATH = os.path.abspath(DB_PATH)
 
 conn = sqlite3.connect(DB_PATH)
