@@ -456,27 +456,58 @@ async def handle_faq(update, state):
 
     await update.message.reply_text("Ищу ответ..." if lang == "ru" else "Жауап ізделуде...")
 
+    if lang == "ru":
+        ai_prompt = f"Ответь кратко и понятно на русском языке:\n{query}"
+    else:
+        ai_prompt = f"Қысқа әрі түсінікті түрде қазақ тілінде жауап бер:\n{query}"
+
     try:
         resp = requests.post(
             DEEPSEEK_URL,
-            json={...},
+            json={
+                "model": AI_MODEL,
+                "prompt": ai_prompt,
+                "stream": False
+            },
             timeout=20
         )
         ai_ans = resp.json().get("response", "⚠️ Ошибка")
     except requests.exceptions.Timeout:
-        ai_ans = "⚠️ Сервер жауап бермеді. Кейінірек көріңіз."
+        ai_ans = (
+            "⚠️ Сервер не отвечает. Попробуйте позже."
+            if lang == "ru"
+            else "⚠️ Сервер жауап бермеді. Кейінірек көріңіз."
+        )
     except Exception:
-        ai_ans = "⚠️ Қате орын алды."
+        ai_ans = (
+            "⚠️ Произошла ошибка."
+            if lang == "ru"
+            else "⚠️ Қате орын алды."
+        )
 
-    insert_ai_log(update.effective_user.id, update.effective_user.username, query, ai_ans)
+    insert_ai_log(
+        update.effective_user.id,
+        update.effective_user.username,
+        query,
+        ai_ans
+    )
 
     kb = [
-        [KeyboardButton(TEXTS["answer_good_btn"][lang]), KeyboardButton(TEXTS["answer_bad_btn"][lang])],
+        [
+            KeyboardButton(TEXTS["answer_good_btn"][lang]),
+            KeyboardButton(TEXTS["answer_bad_btn"][lang])
+        ],
         [KeyboardButton(TEXTS["main_menu"][lang])]
     ]
 
-    await update.message.reply_text("Жауап дайындалуда...")
-    await update.message.reply_text(ai_ans, reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True))
+    await update.message.reply_text(
+        "Жауап дайындалуда..." if lang == "kz" else "Ответ готовится..."
+    )
+
+    await update.message.reply_text(
+        ai_ans,
+        reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True)
+    )
 
     state["step"] = "faq_feedback"
     state["faq_id"] = None
